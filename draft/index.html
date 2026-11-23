@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team Draft</title>
+  <style>
+    :root {
+      --green: #1b5e20;
+      --green-dark: #0f3d14;
+      --green-soft: #e8f5e9;
+      --gold: #f9a825;
+      --bg: #f4f6f4;
+      --card: #ffffff;
+      --text: #1d241e;
+      --muted: #5f6b61;
+      --line: #dfe5df;
+      --danger: #c62828;
+      --flight-a: #1565c0;
+      --flight-b: #2e7d32;
+      --flight-c: #ef6c00;
+      --flight-d: #6a1b9a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    header {
+      background: var(--green-dark);
+      color: #fff;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    header h1 { margin: 0; font-size: 20px; }
+    header .sub { font-size: 13px; opacity: .8; }
+    header button { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    button {
+      font: inherit;
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      background: var(--green);
+      color: #fff;
+    }
+    button.secondary { background: #fff; color: var(--green); border: 1px solid var(--green); }
+    button.whatsapp { background: #1f8f4e; }
+    button.link { background: none; color: var(--green); border: 0; padding: 2px 4px; font-weight: 700; cursor: pointer; }
+    .records { margin: 0 0 8px; padding-left: 22px; line-height: 1.7; }
+    dialog#replayDialog { border: 0; border-radius: 14px; padding: 16px; width: min(360px, calc(100vw - 32px)); }
+    dialog#replayDialog::backdrop { background: rgba(0,0,0,.5); }
+    .rhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .rhead h2 { font-size: 16px; margin: 0; }
+    .rstats { display: flex; justify-content: space-between; margin: 10px 0; font-size: 15px; }
+    .rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .rcell { aspect-ratio: 1; border-radius: 50%; background: #946030; box-shadow: inset 0 6px 0 #5e3818; display: flex; align-items: center; justify-content: center; font-size: 34px; color: #fff; }
+    .rcell.miss { font-size: 40px; color: #ffcdd2; }
+    .recap { font-size: 16px; line-height: 1.55; margin-bottom: 8px; }
+    button.danger { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    select, input {
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      max-width: 100%;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .card h2 { margin: 0 0 10px; font-size: 18px; }
+    .row label { display: inline-flex; flex-direction: column; gap: 4px; max-width: 100%; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .muted { color: var(--muted); font-size: 14px; }
+    .status {
+      font-size: 17px;
+      font-weight: 600;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--green-soft);
+      border: 1px solid #b9dcbc;
+      margin-bottom: 16px;
+    }
+    .status.clock { background: #fff8e1; border-color: #ffe082; }
+    .teams { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .team { background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 12px; }
+    .team.clock { border-color: var(--gold); box-shadow: 0 0 0 3px #fff3c4; }
+    .team .why { margin: -4px 0 8px; font-size: 12px; }
+    .team h3 { margin: 0 0 8px; font-size: 16px; display: flex; justify-content: space-between; gap: 8px; }
+    .slot { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); }
+    .slot:first-of-type { border-top: 0; }
+    .slot .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .slot.empty .name { color: #a3aca4; }
+    .flight {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 6px;
+      color: #fff; font-size: 13px; font-weight: 700; flex: none;
+    }
+    .flight-A { background: var(--flight-a); }
+    .flight-B { background: var(--flight-b); }
+    .flight-C { background: var(--flight-c); }
+    .flight-D { background: var(--flight-d); }
+    .tag { font-size: 11px; font-weight: 700; color: var(--gold); border: 1px solid var(--gold); border-radius: 4px; padding: 0 4px; }
+    .fresh { animation: flash 2.5s ease-out; }
+    @keyframes flash { from { background: #fff3c4; } to { background: transparent; } }
+    .pool { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .pool h4 { margin: 0 0 6px; display: flex; align-items: center; gap: 6px; font-size: 15px; }
+    .chip {
+      display: block; width: 100%; text-align: left;
+      background: #fff; color: var(--text);
+      border: 1px solid var(--line); border-radius: 8px;
+      padding: 7px 10px; margin-bottom: 6px;
+    }
+    .chip.pickable { border-color: var(--green); color: var(--green); font-weight: 600; }
+    .chip.pickable:hover { background: var(--green-soft); }
+    .chip:disabled { opacity: .4; }
+    .log { margin: 0; padding-left: 22px; }
+    .log li { padding: 2px 0; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { padding: 6px 4px; border-top: 1px solid var(--line); text-align: left; }
+    th { font-size: 13px; color: var(--muted); font-weight: 600; }
+    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .seg button { background: #fff; color: var(--text); border-radius: 0; padding: 5px 11px; }
+    .seg button + button { border-left: 1px solid var(--line); }
+    .seg button.on { color: #fff; }
+    .seg button.on.A { background: var(--flight-a); }
+    .seg button.on.B { background: var(--flight-b); }
+    .seg button.on.C { background: var(--flight-c); }
+    .seg button.on.D { background: var(--flight-d); }
+    .problems { color: var(--danger); margin: 8px 0 0; padding-left: 20px; }
+    .up { color: var(--flight-b); font-weight: 700; margin-left: 3px; }
+    .down { color: var(--danger); font-weight: 700; margin-left: 3px; }
+    #endRound .pool table td, #endRound .pool table th { padding: 4px 3px; font-size: 14px; }
+    .gopherLink { background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; padding: 10px 12px; font-weight: 600; }
+    .playLink { display: block; text-align: center; background: var(--green); color: #fff; border-radius: 10px; padding: 14px 12px; font-size: 1.1rem; text-decoration: none; }
+    .playerView #flightsCard, .playerView #recordsCard { display: none !important; }
+    #gopherAddress { display: block; text-align: center; margin-top: 6px; font-size: .85rem; font-weight: 400; overflow-wrap: anywhere; }
+    table.shootout td, table.shootout th { padding: 7px 5px; }
+    table.shootout td.score { font-weight: 700; font-size: 18px; }
+    table.shootout tr.tie td { background: #fff8e1; }
+    table.shootout .mini { padding: 3px 8px; font-size: 13px; margin: 2px; }
+    .place { font-weight: 700; color: var(--green); white-space: nowrap; }
+    .hidden { display: none !important; }
+    .error { color: var(--danger); }
+    /* A problem with what you just tapped, on top of the page where you'll see it */
+    #toast { position: fixed; left: 12px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 50;
+      background: var(--danger); color: #fff; border-radius: 12px; padding: 14px 44px 14px 16px; font-weight: 600;
+      box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+    #toast button { position: absolute; right: 8px; top: 8px; background: none; border: 0; color: #fff; font-size: 22px; line-height: 1; padding: 4px 8px; }
+    @media print { #toast { display: none !important; } }
+    @media (max-width: 700px) {
+      main { padding: 12px; }
+      .pool { grid-template-columns: repeat(2, 1fr); }
+      header h1 { font-size: 18px; }
+      /* Two compact team cards per row so "Available" stays near the top */
+      .teams { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .team { padding: 8px; }
+      .team h3 { font-size: 14px; }
+      .team h3 .muted { display: none; }
+      .slot { font-size: 13px; gap: 5px; padding: 3px 0; }
+      .slot .flight { width: 19px; height: 19px; font-size: 11px; }
+      .tag { font-size: 9px; }
+      .status { font-size: 15px; padding: 10px 12px; }
+    }
+    /* The paper backup if the signal fails at the venue: flights, captains, teams,
+       picks so far, on white, without the buttons */
+    @media print {
+      header button, #adminBar, #adminActions, #signIn, #saveBar, #recapCard, #recordsCard,
+      #captainLink, #shootoutAdmin, .adminCol, .gopherLink, dialog { display: none !important; }
+      body, .card, .team { background: #fff !important; color: #000 !important; box-shadow: none !important; }
+      .card, .team { break-inside: avoid; border: 1px solid #999; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Team Draft</h1>
+      <div class="sub" id="subtitle">Connecting…</div>
+    </div>
+    <button id="adminButton" type="button">Run draft</button>
+  </header>
+
+  <main>
+    <!-- Admin sign-in -->
+    <section id="signIn" class="card hidden">
+      <h2>Sign in to run the draft</h2>
+      <form id="signInForm" class="row">
+        <input id="email" type="email" placeholder="Organizer or backup email" autocomplete="username" required>
+        <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit">Sign in</button>
+        <button type="button" class="secondary" id="cancelSignIn">Cancel</button>
+      </form>
+      <p class="error" id="signInError"></p>
+    </section>
+
+    <!-- Admin controls -->
+    <section id="adminBar" class="card hidden">
+      <div class="row">
+        <strong>Draft:</strong>
+        <select id="draftPicker"></select>
+        <button type="button" class="secondary" onclick="window.print()">Print (paper backup)</button>
+        <span class="muted" id="adminWho"></span>
+      </div>
+    </section>
+
+    <!-- The draft board (everyone) -->
+    <section id="board" class="hidden">
+      <div id="status" class="status"></div>
+      <div id="adminActions" class="row hidden" style="margin-bottom:16px">
+        <button type="button" class="secondary" id="undoButton">Undo last pick</button>
+        <button type="button" class="danger" id="deleteButton">Delete draft</button>
+      </div>
+      <!-- Whack-a-Gopher shootout for pick order (gopher.html on the captains' phones) -->
+      <div id="shootoutCard" class="card hidden">
+        <h2>Shootout for pick order</h2>
+        <p class="muted" id="shootoutHelp"></p>
+        <p class="gopherLink"><a id="gopherLink" class="playLink" href="gopher.html">🐹 Captains: play Whack-a-Gopher</a><span id="gopherAddress" class="muted"></span></p>
+        <table class="shootout">
+          <thead><tr><th>Place</th><th>Team</th><th>Captain</th><th>Phone</th><th>Practice</th><th id="shootoutRoundHead">Score</th><th class="adminCol"></th></tr></thead>
+          <tbody id="shootoutRows"></tbody>
+        </table>
+        <div id="shootoutAdmin" class="hidden">
+          <div class="row" style="margin-top:12px" id="shootoutMain"></div>
+          <details style="margin-top:12px">
+            <summary class="muted">If something goes wrong</summary>
+            <div class="row" style="margin-top:8px">
+              <button type="button" class="secondary" data-shootout="restart">Restart this round</button>
+              <button type="button" class="secondary" data-shootout="practice">Back to practice</button>
+              <button type="button" class="danger" data-shootout="over">Start over</button>
+              <button type="button" class="secondary" data-shootout="skip">Skip it and draft in current order</button>
+            </div>
+            <p class="muted">Each captain's row also has Replay (clear their score for this round), Practice again, and Unlink phone (for a dropped or swapped phone; their scores stay).</p>
+          </details>
+        </div>
+      </div>
+      <!-- A captain links this phone to their name to make their team's picks -->
+      <div id="captainLink" class="card hidden"></div>
+      <div id="teams" class="teams"></div>
+      <!-- Only once every pick is in, and away from Undo -->
+      <div id="saveBar" class="card hidden">
+        <h2>All picks are in</h2>
+        <p class="muted" id="saveNote">Saving makes these teams the round's playing groups.</p>
+        <button type="button" id="saveButton">Save teams to round</button>
+      </div>
+      <!-- Written by Claude once every pick is in; everyone sees it -->
+      <div id="recapCard" class="card hidden">
+        <h2>Draft recap <span class="muted">· written by Claude</span></h2>
+        <div id="recapText" class="recap"></div>
+        <p class="muted" id="recapStatus"></p>
+        <div class="row">
+          <button type="button" id="recapShare" class="whatsapp hidden">Share to WhatsApp</button>
+          <button type="button" id="recapAgain" class="secondary hidden">Write it again</button>
+        </div>
+      </div>
+      <div id="recordsCard" class="card hidden">
+        <h2>🐹 Gopher Hall of Fame</h2>
+        <ol id="recordsTop" class="records"></ol>
+        <p class="muted" id="recordsMore"></p>
+        <button type="button" id="recordsClear" class="secondary mini hidden">Clear records (after testing)</button>
+      </div>
+      <div class="card">
+        <h2 id="poolTitle">Available</h2>
+        <div id="pool" class="pool"></div>
+      </div>
+      <div class="card">
+        <h2>Picks</h2>
+        <ol id="log" class="log"></ol>
+      </div>
+    </section>
+
+    <!-- Flights by day (everyone), once a round has flights -->
+    <section id="flightsCard" class="card hidden">
+      <h2>Flights</h2>
+      <div style="overflow-x:auto"><table id="flightsTable"></table></div>
+    </section>
+
+    <section id="empty" class="card hidden">
+      <h2>No draft yet</h2>
+      <p class="muted">This page updates on its own once the draft starts.</p>
+    </section>
+
+    <p class="error" id="pageError"></p>
+  </main>
+  <div id="toast" class="hidden" role="alert"><span id="toastText"></span><button type="button" id="toastClose" aria-label="Close">×</button></div>
+
+  <!-- Watch a captain's shootout run back -->
+  <dialog id="replayDialog" aria-labelledby="replayTitle">
+    <div id="replayBody">
+      <div class="rhead"><h2 id="replayTitle">Replay</h2><button type="button" class="link" data-close aria-label="Close">✕</button></div>
+      <div class="rstats"><span>Score <b class="rscore">0</b></span><span>Time <b class="rtime">30</b></span></div>
+      <div class="rgrid"><div class="rcell"></div><div class="rcell"></div><div class="rcell"></div><div class="rcell"></div><div class="rcell"></div><div class="rcell"></div><div class="rcell"></div><div class="rcell"></div><div class="rcell"></div></div>
+      <div class="row"><button type="button" class="secondary mini" data-speed="1">Real time</button><button type="button" class="secondary mini" data-speed="2">2×</button><button type="button" class="secondary mini" data-speed="4">4×</button></div>
+      <p class="muted">💥 a hit · a dot is a miss</p>
+    </div>
+  </dialog>
+
+  <!-- ?v= is stamped by TournamentApp scripts/syncDraftSite.mjs: Hostinger caches .js files for a week -->
+  <script type="module" src="app.js?v=1564c96bae"></script>
+</body>
+</html>
